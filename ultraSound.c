@@ -1,5 +1,6 @@
 #include"ultraSound.h"
 un16 distance = 0;
+un8 t0Time = 1;
 //89C52
 void Delay20us()		//@12.000MHz
 {
@@ -25,8 +26,8 @@ void Delay100ms()		//@12.000MHz
 un16 ULsound_diatance(void)
 {
 	un8 maxWait = 100;
-	un8 count=1;
 	trig = distance = 0;
+	t0Time = 1;
 	Delay100ms();
 	trig = 1;
 	Delay20us();
@@ -35,24 +36,23 @@ un16 ULsound_diatance(void)
 	TMOD = 0x01;
 	TH0 = TL0 = 0;
 	TR0 = 1;
-	EA = EX0 = 1;
+	EA = EX0 = ET0 = 1;
 	while (echo&&--maxWait)
-	{
-		if(TF0)
-		{
-			count++;
-			TF0=0;
-		}
 		Delay20us();
-	}
-	return count * distance / 58;//cm
+	return t0Time * distance / 58;//cm
 }
 
 void countDistance(void) interrupt 0
 {
-	TR0 = 0;
+	TR0 = ET0 = 0;
 	distance = TH0;
 	distance <<= 8;
 	distance |= TL0;
 	EA = EX0 = 0;
+}
+
+void t0interrupt(void) interrupt 1
+{
+	t0Time++;
+	TH0 = TL0 = 0;
 }
